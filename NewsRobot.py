@@ -29,11 +29,18 @@ class NewsRobot(WebRequest):
 
     def deal_dict_data(self, detail):
         data_list = []
+
         for item in detail:
+            # print(item)
             data = self.get_detail(item)
+
             if data is not None:
+                data['imgurl'] = item['imgurl']
+                data['pubtime'] = item['pubtime']
                 data_list.append(data)
-        print(data_list)
+        with open("json/News.json","w") as f:
+            data_list_json = json.dumps(data_list)
+            f.write(data_list_json)
     def get_detail(self, item):
         detail = item["url"]
         # print(detail)
