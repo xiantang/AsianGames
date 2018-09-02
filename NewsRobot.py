@@ -1,5 +1,6 @@
 import json
 import re
+from lxml import etree
 
 from WebRequest import WebRequest
 
@@ -26,10 +27,43 @@ class NewsRobot(WebRequest):
         dict_url_list = json.loads(json_url_list)
         return dict_url_list
 
-    
+    def deal_dict_data(self, detail):
+        data_list = []
+        for item in detail:
+            data = self.get_detail(item)
+            if data is not None:
+                data_list.append(data)
+        print(data_list)
+    def get_detail(self, item):
+        detail = item["url"]
+        # print(detail)
+        raw_detail_html = self.get(detail).text
+        return self.parse_detail(raw_detail_html)
+
+    def parse_detail(self, raw_detail_html):
+        # print(len(raw_detail_html))
+        selector = etree.HTML(raw_detail_html)
+        title = selector.xpath('//div[@class="hd"]/h1/text()|//meta[@name="Description"]/@content')[0]
+        content = selector.xpath('//p[@class="text"]/text()|//div[@class="infoTxt"]/p/text()')
+        if len(content) == 0:
+            return None
+
+        else:
+            item = {}
+            item['title'] = title
+            item['content'] = content
+            imgs = selector.xpath('//p[@align="center"]/img/@src')
+            for i in range(len(imgs)):
+                imgs[i] = "http:"+imgs[i]
+            item["imgs"] = imgs
+            return  item
+
+    def run(self):
+        detail = self.get_url_list()
+        self.deal_dict_data(detail)
 
 
 if __name__ == '__main__':
     url = "http://sports.qq.com/l/others/2018asiangames/jakartanews/list2018071716110.htm"
     nr = NewsRobot(url)
-    nr.get_url_list()
+    nr.run()
